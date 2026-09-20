@@ -1,0 +1,15 @@
+{
+  "name": "SIMA 360° - Gestión Municipal",
+  "short_name": "SIMA 360°",
+  "description": "Sistema Integral Municipal de Autogestión, Prevención y Control Inteligente",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f8fb",
+  "theme_color": "#102c49",
+  "orientation": "any",
+  "icons": [
+    {"src":"dist/icon-192.svg","sizes":"192x192","type":"image/svg+xml","purpose":"any maskable"},
+    {"src":"dist/icon-512.svg","sizes":"512x512","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
