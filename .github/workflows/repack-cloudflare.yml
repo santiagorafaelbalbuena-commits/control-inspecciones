@@ -1,0 +1,89 @@
+name: Preparar despliegue Cloudflare
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  repack:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Reconstruir paquete de SIMA 360
+        shell: bash
+        run: |
+          set -e
+          rm -rf build
+          mkdir -p build
+          unzip -q SIMA-360-GITHUB-v7.3.zip -d build
+
+          cp inspection-filters.js build/inspection-filters.js
+          cp inspection-filters.css build/inspection-filters.css
+          cp normative-module.js build/normative-module.js
+          cp normative-module.css build/normative-module.css
+          cp login-role-flow.js build/login-role-flow.js
+          cp login-role-flow.css build/login-role-flow.css
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("build/index.html")
+          s = p.read_text(encoding="utf-8")
+
+          css = [
+              '<link rel="stylesheet" href="inspection-filters.css?v=8.0">',
+              '<link rel="stylesheet" href="normative-module.css?v=8.0">',
+              '<link rel="stylesheet" href="login-role-flow.css?v=8.0">',
+          ]
+          js = [
+              '<script defer src="inspection-filters.js?v=8.0"></script>',
+              '<script type="module" src="normative-module.js?v=8.0"></script>',
+              '<script src="login-role-flow.js?v=8.0"></script>',
+          ]
+
+          for tag in css:
+              if tag.split("?")[0] not in s:
+                  s = s.replace("</head>", "  " + tag + "\n</head>")
+
+          for tag in js:
+              if tag.split("?")[0] not in s:
+                  s = s.replace("</body>", "  " + tag + "\n</body>")
+
+          s = s.replace("styles.css?v=7.4", "styles.css?v=8.0")
+          s = s.replace("app.js?v=7.4", "app.js?v=8.0")
+          p.write_text(s, encoding="utf-8")
+          PY
+
+          cat > build/service-worker.js <<'EOF'
+          self.addEventListener("install",()=>self.skipWaiting());
+          self.addEventListener("activate",event=>{
+            event.waitUntil(caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
+          });
+          self.addEventListener("fetch",event=>{
+            if(event.request.method!=="GET") return;
+            event.respondWith(fetch(event.request,{cache:"no-store"}).catch(()=>caches.match(event.request)));
+          });
+          EOF
+
+          rm -f SIMA-360-GITHUB-v7.3.zip.new
+          (cd build && zip -qr ../SIMA-360-GITHUB-v7.3.zip.new .)
+          mv SIMA-360-GITHUB-v7.3.zip.new SIMA-360-GITHUB-v7.3.zip
+
+      - name: Guardar paquete actualizado
+        shell: bash
+        run: |
+          if git diff --quiet -- SIMA-360-GITHUB-v7.3.zip; then
+            echo "No hay cambios para guardar"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add SIMA-360-GITHUB-v7.3.zip
+          git commit -m "Actualizar paquete de despliegue de SIMA 360"
+          git push
