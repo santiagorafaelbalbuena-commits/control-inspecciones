@@ -99,7 +99,30 @@
     });
   }
 
+  function hideRemovedAdminModules(){
+    const shell = $(".app-shell");
+    if (!shell) return;
+
+    $('[data-route="contribuyentes"],[data-route="infracciones"],[data-jump="contribuyentes"],[data-jump="infracciones"]').forEach(el => el.remove());
+
+    $(".metric-card").forEach(el => {
+      const t = (el.textContent || "").toLowerCase();
+      if (t.includes("contribuyentes") || t.includes("infracciones")) el.remove();
+    });
+
+    const note = $(".export-note");
+    if (note && /contribuyentes|infracciones/i.test(note.textContent || "")){
+      note.innerHTML = "<b>Excel de presentación:</b> incluye indicadores, gráficos, datos de inspecciones, comercios, obras, inspectores y seguimiento de planillas en hojas separadas.";
+    }
+
+    if ($(".route-contribuyentes") || $(".route-infracciones")){
+      $('[data-route="dashboard"]')?.click();
+    }
+  }
+
   function applyRoleFlow(){
+    hideRemovedAdminModules();
+
     const card = $(".login-card");
     const form = card ? $("#loginForm", card) : null;
 
