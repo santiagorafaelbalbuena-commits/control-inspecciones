@@ -107,15 +107,15 @@
 
     $(".metric-card").forEach(el => {
       const t = (el.textContent || "").toLowerCase();
-      if (t.includes("contribuyentes") || t.includes("infracciones")) el.remove();
+      if (t.includes("comercios") || t.includes("contribuyentes") || t.includes("infracciones")) el.remove();
     });
 
     const note = $(".export-note");
     if (note && /contribuyentes|infracciones/i.test(note.textContent || "")){
-      note.innerHTML = "<b>Excel de presentación:</b> incluye indicadores, gráficos, datos de inspecciones, comercios, obras, inspectores y seguimiento de planillas en hojas separadas.";
+      note.innerHTML = "<b>Excel de presentación:</b> incluye indicadores, gráficos, datos de inspecciones, obras, inspectores y seguimiento de planillas en hojas separadas.";
     }
 
-    if ($(".route-contribuyentes") || $(".route-infracciones")){
+    if ($(".route-comercios") || $(".route-contribuyentes") || $(".route-infracciones")){
       $('[data-route="dashboard"]')?.click();
     }
   }
