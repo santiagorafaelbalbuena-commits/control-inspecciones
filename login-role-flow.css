@@ -1,0 +1,71 @@
+.login-card.sima-role-first .role-cards{
+  gap:12px;
+}
+.login-card.sima-role-first .role-cards button{
+  min-height:118px;
+  border:1px solid #dbe4ee;
+  background:#fff;
+  box-shadow:0 8px 22px rgba(20,44,72,.07);
+}
+.login-card.sima-role-first .role-cards button:hover{
+  border-color:#57afe8;
+  background:#f2f9ff;
+}
+.login-card.sima-role-first .role-cards button strong{
+  font-size:14px;
+}
+.login-card.sima-role-first .role-cards button small{
+  font-size:11px;
+}
+.login-card.sima-role-first .quick-access-title{
+  margin-top:8px;
+}
+.sima-selected-mode{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin:0 0 15px;
+  padding:10px 12px;
+  border:1px solid #dbeafe;
+  border-radius:12px;
+  background:#f4f9ff;
+}
+.sima-mode-chip{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  color:#174b78;
+  font-size:13px;
+}
+.sima-change-role{
+  border:0;
+  background:transparent;
+  color:#0b67b5;
+  font-size:11px;
+  font-weight:850;
+  cursor:pointer;
+}
+.sima-change-role:hover{
+  text-decoration:underline;
+}
+@media(max-width:620px){
+  .login-card.sima-role-first .role-cards{
+    grid-template-columns:1fr 1fr;
+  }
+  .login-card.sima-role-first .role-cards button{
+    min-height:104px;
+    padding:10px 7px;
+  }
+  .login-card.sima-role-first .role-cards button strong{
+    font-size:12px;
+  }
+  .login-card.sima-role-first .role-cards button small{
+    font-size:9px;
+  }
+  .sima-selected-mode{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:5px;
+  }
+}
