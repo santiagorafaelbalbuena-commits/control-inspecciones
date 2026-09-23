@@ -1,6 +1,0 @@
-[build]
-  command = "rm -rf dist && mkdir -p dist && unzip -q SIMA-360-GITHUB-v7.3.zip -d dist"
-  publish = "dist"
-
-[build.environment]
-  NODE_VERSION = "20"
