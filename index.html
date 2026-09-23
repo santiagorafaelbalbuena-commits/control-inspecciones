@@ -3,31 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#102c49">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="SIMA 360°">
-  <meta name="description" content="SIMA 360° - Sistema Integral Municipal de Autogestión, Prevención y Control Inteligente">
+  <meta name="theme-color" content="#0f2f55">
+  <meta name="description" content="SIMA 360° - Sistema de inspecciones de Higiene y Seguridad">
   <title>SIMA 360° · Gestión Municipal</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" href="dist/icon-192.svg">
-  <link rel="stylesheet" href="dist/styles.css?v=7.4">
-  <link rel="stylesheet" href="inspection-filters.css?v=7.5">
-  <link rel="stylesheet" href="normative-module.css?v=7.10">
-  <link rel="stylesheet" href="login-role-flow.css?v=7.10">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script defer src="inspection-filters.js?v=7.5"></script>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main id="app"></main>
-  <script type="module" src="dist/app.js?v=7.4"></script>
-  <script type="module" src="normative-module.js?v=7.10"></script>
-  <script src="login-role-flow.js?v=7.10"></script>
+  <div id="app"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
 </body>
 </html>
-
-<!-- deploy-trigger-7.10 -->
