@@ -18,7 +18,157 @@ async function renderView(view){const c=document.getElementById('content');c.inn
 async function renderDashboard(c){const [{count:commerceCount},{count:inspectionCount},{count:workCount},{count:infractionCount}]=await Promise.all([sb.from('commerces').select('*',{count:'exact',head:true}),sb.from('inspections').select('*',{count:'exact',head:true}),sb.from('works').select('*',{count:'exact',head:true}),sb.from('infractions').select('*',{count:'exact',head:true})]);const {data:last}=await sb.from('inspections').select('id,inspected_at,status,act_number,commerces(business_name),profiles(full_name)').order('inspected_at',{ascending:false}).limit(5);c.innerHTML=`<div class="page-head"><div><h1>Panel de ${currentProfile.role==='admin'?'administración':'inspector'}</h1><p>Resumen general y estado actual del sistema.</p></div></div><div class="stats-grid"><div class="stat-card"><div class="stat-top"><div><div class="stat-label">Comercios</div><div class="stat-value">${commerceCount||0}</div></div><div class="stat-icon">🏪</div></div></div><div class="stat-card"><div class="stat-top"><div><div class="stat-label">Inspecciones</div><div class="stat-value">${inspectionCount||0}</div></div><div class="stat-icon">📋</div></div></div><div class="stat-card"><div class="stat-top"><div><div class="stat-label">Obras privadas</div><div class="stat-value">${workCount||0}</div></div><div class="stat-icon">🏗️</div></div></div><div class="stat-card"><div class="stat-top"><div><div class="stat-label">Infracciones</div><div class="stat-value">${infractionCount||0}</div></div><div class="stat-icon">⚠️</div></div></div></div><div class="quick-grid"><div class="quick-card" onclick="navigate('comercios')"><span>🏪</span><div><strong>Ver comercios</strong><div class="muted">Base municipal</div></div></div><div class="quick-card" onclick="navigate('inspecciones')"><span>📋</span><div><strong>Ver inspecciones</strong><div class="muted">Historial y seguimiento</div></div></div><div class="quick-card" onclick="navigate('reportes')"><span>📊</span><div><strong>Ver reportes</strong><div class="muted">Indicadores generales</div></div></div></div><div class="panel"><h3>Últimas inspecciones</h3>${last?.length?inspectionTable(last):'<div class="empty">Todavía no hay inspecciones registradas.</div>'}</div>`}
 function inspectionTable(rows){return `<div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Comercio</th><th>Inspector</th><th>Expediente / Acta</th><th>Estado</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${fmtDate(r.inspected_at)}</td><td>${esc(r.commerces?.business_name||'—')}</td><td>${esc(r.profiles?.full_name||'—')}</td><td>${esc(r.act_number||'—')}</td><td><span class="badge ${r.status==='realizada'?'success':r.status==='observada'?'warning':''}">${esc(r.status||'—')}</span></td></tr>`).join('')}</tbody></table></div>`}
 async function renderCommerces(c){const {data,error}=await sb.from('commerces').select('id,business_name,legal_name,cuit,commercial_license,address,sector,zone,status').order('business_name').limit(1000);if(error)throw error;commercesCache=data||[];c.innerHTML=`<div class="page-head"><div><h1>Comercios</h1><p>Base municipal unificada de establecimientos.</p></div><div class="toolbar"><input class="searchbox" id="commerceSearch" placeholder="Buscar comercio, dirección o CUIT"></div></div><div class="panel" id="commerceTable"></div>`;const render=rows=>document.getElementById('commerceTable').innerHTML=`<h3>${rows.length} comercios</h3><div class="table-wrap"><table class="data-table"><thead><tr><th>Comercio</th><th>CUIT</th><th>Habilitación</th><th>Dirección</th><th>Sector</th><th>Estado</th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${esc(r.business_name)}</strong><br><small class="muted">${esc(r.legal_name||'')}</small></td><td>${esc(r.cuit||'—')}</td><td>${esc(r.commercial_license||'—')}</td><td>${esc(r.address||'—')}</td><td>${esc(r.sector||'—')}</td><td><span class="badge ${r.status==='activo'?'success':''}">${esc(r.status||'—')}</span></td></tr>`).join('')}</tbody></table></div>`;render(commercesCache);document.getElementById('commerceSearch').oninput=e=>{const q=e.target.value.toLowerCase().trim();render(commercesCache.filter(r=>[r.business_name,r.legal_name,r.cuit,r.address,r.sector,r.zone].some(v=>String(v||'').toLowerCase().includes(q))))}}
-async function renderInspections(c){const {data,error}=await sb.from('inspections').select('id,inspected_at,status,act_number,observations,qr_scanned,commerces(business_name,address),profiles(full_name)').order('inspected_at',{ascending:false}).limit(500);if(error)throw error;c.innerHTML=`<div class="page-head"><div><h1>Inspecciones</h1><p>Historial general de comercios y obras privadas.</p></div><div class="toolbar"><button class="btn primary" id="newInspection">+ Nueva inspección</button></div></div><div class="panel">${data?.length?inspectionTable(data):'<div class="empty">Todavía no hay inspecciones registradas.</div>'}</div>`;document.getElementById('newInspection').onclick=()=>toast('El formulario de nueva inspección será el próximo módulo a completar.')}
+async function renderInspections(c){
+  const {data,error}=await sb.from('inspections').select('id,inspected_at,status,act_number,observations,qr_scanned,commerces(business_name,address),profiles(full_name)').order('inspected_at',{ascending:false}).limit(500);
+  if(error)throw error;
+  c.innerHTML=`<div class="page-head"><div><h1>Inspecciones</h1><p>Historial general de comercios y obras privadas.</p></div><div class="toolbar"><button class="btn primary" id="newInspection">+ Nueva inspección</button></div></div><div class="panel">${data?.length?inspectionTable(data):'<div class="empty">Todavía no hay inspecciones registradas.</div>'}</div>`;
+  document.getElementById('newInspection').onclick=openNewInspectionModal;
+}
+async function openNewInspectionModal(){
+  let commerces=commercesCache;
+  if(!commerces.length){
+    const {data,error}=await sb.from('commerces').select('id,business_name,address,status').eq('active',true).order('business_name').limit(1000);
+    if(error){toast('No se pudo cargar la lista de comercios.');return}
+    commerces=data||[];
+  }
+  const modal=document.createElement('div');
+  modal.className='modal-backdrop';
+  modal.innerHTML=`<div class="modal-card">
+    <div class="modal-head"><div><h2>Nueva inspección</h2><p>Inspector: <strong>${esc(currentProfile.full_name)}</strong></p></div><button class="modal-close" type="button" aria-label="Cerrar">×</button></div>
+    <form id="inspectionForm">
+      <div class="form-grid">
+        <div class="field span-2"><label>Comercio *</label><select id="inspectionCommerce" required><option value="">Seleccionar comercio…</option>${commerces.map(x=>`<option value="${esc(x.id)}">${esc(x.business_name)} — ${esc(x.address||'Sin dirección')}</option>`).join('')}</select></div>
+        <div class="field"><label>N° de Expediente / Acta</label><input id="inspectionAct" type="text" placeholder="Ej.: EXP-2026-001"></div>
+        <div class="field"><label>Estado</label><select id="inspectionStatus"><option value="realizada">Realizada</option><option value="observada">Observada</option><option value="pendiente">Pendiente</option></select></div>
+        <div class="field span-2"><label>Observaciones</label><textarea id="inspectionObs" rows="4" placeholder="Detalle de la inspección, hallazgos y recomendaciones…"></textarea></div>
+        <div class="field span-2"><label>Ubicación GPS</label><div class="gps-row"><button class="btn" type="button" id="getGps">📍 Tomar ubicación actual</button><span id="gpsStatus" class="muted">Sin ubicación registrada</span></div></div>
+        <div class="field span-2"><label>Fotografías</label><input id="inspectionPhotos" type="file" accept="image/*" multiple capture="environment"><div class="field-help">Las imágenes se comprimen automáticamente antes de subirlas. Máximo 6 fotos.</div><div id="photoSummary" class="photo-summary"></div></div>
+      </div>
+      <div id="inspectionError"></div>
+      <div class="modal-actions"><button type="button" class="btn" id="cancelInspection">Cancelar</button><button type="submit" class="btn primary" id="saveInspection">Guardar inspección</button></div>
+    </form>
+  </div>`;
+  document.body.appendChild(modal);
+  let gps={latitude:null,longitude:null,accuracy:null};
+  const close=()=>modal.remove();
+  modal.querySelector('.modal-close').onclick=close;
+  modal.querySelector('#cancelInspection').onclick=close;
+  modal.addEventListener('click',e=>{if(e.target===modal)close()});
+  modal.querySelector('#getGps').onclick=()=>{
+    const status=modal.querySelector('#gpsStatus');
+    if(!navigator.geolocation){status.textContent='Este dispositivo no permite geolocalización.';return}
+    status.textContent='Obteniendo ubicación…';
+    navigator.geolocation.getCurrentPosition(
+      p=>{gps={latitude:p.coords.latitude,longitude:p.coords.longitude,accuracy:p.coords.accuracy};status.textContent=`${gps.latitude.toFixed(6)}, ${gps.longitude.toFixed(6)} · precisión ±${Math.round(gps.accuracy)} m`},
+      ()=>{status.textContent='No se pudo obtener la ubicación. Revisá el permiso del navegador.'},
+      {enableHighAccuracy:true,timeout:12000,maximumAge:0}
+    );
+  };
+  modal.querySelector('#inspectionPhotos').onchange=e=>{
+    const files=[...e.target.files];
+    if(files.length>6){
+      e.target.value='';
+      modal.querySelector('#photoSummary').textContent='Podés seleccionar hasta 6 fotografías.';
+      return;
+    }
+    const total=files.reduce((n,f)=>n+f.size,0);
+    modal.querySelector('#photoSummary').textContent=files.length?`${files.length} foto(s) seleccionada(s) · tamaño original ${formatBytes(total)}`:'';
+  };
+  modal.querySelector('#inspectionForm').onsubmit=e=>saveInspection(e,modal,gps,close);
+}
+function formatBytes(bytes){if(!bytes)return '0 KB';const kb=bytes/1024;return kb<1024?`${kb.toFixed(0)} KB`:`${(kb/1024).toFixed(1)} MB`}
+async function compressImage(file,maxDimension=1600,quality=.76){
+  if(!file.type.startsWith('image/'))throw new Error('Archivo no válido');
+  const image=await loadImage(file);
+  let width=image.width,height=image.height;
+  const scale=Math.min(1,maxDimension/Math.max(width,height));
+  width=Math.max(1,Math.round(width*scale));height=Math.max(1,Math.round(height*scale));
+  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+  const ctx=canvas.getContext('2d',{alpha:false});ctx.drawImage(image,0,0,width,height);
+  const preferred='image/webp';
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,preferred,quality));
+  if(!blob)throw new Error('No se pudo comprimir la imagen');
+  return blob;
+}
+function loadImage(file){
+  return new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(file),img=new Image();
+    img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};
+    img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('No se pudo leer la imagen'))};
+    img.src=url;
+  });
+}
+async function saveInspection(e,modal,gps,close){
+  e.preventDefault();
+  const errorBox=modal.querySelector('#inspectionError');
+  const saveBtn=modal.querySelector('#saveInspection');
+  errorBox.innerHTML='';
+  const commerceId=modal.querySelector('#inspectionCommerce').value;
+  const act=modal.querySelector('#inspectionAct').value.trim();
+  const status=modal.querySelector('#inspectionStatus').value;
+  const observations=modal.querySelector('#inspectionObs').value.trim();
+  const photoInput=modal.querySelector('#inspectionPhotos');
+  const files=[...photoInput.files];
+  if(!commerceId){errorBox.innerHTML='<div class="form-error">Seleccioná un comercio.</div>';return}
+  if(files.length>6){errorBox.innerHTML='<div class="form-error">El máximo es de 6 fotografías.</div>';return}
+  saveBtn.disabled=true;saveBtn.textContent='Guardando…';
+  try{
+    const compressed=[];
+    let compressedBytes=0;
+    for(const file of files){
+      const blob=await compressImage(file);
+      compressed.push(blob);compressedBytes+=blob.size;
+    }
+    if(files.length) modal.querySelector('#photoSummary').textContent=`Fotos comprimidas: ${formatBytes(compressedBytes)} en total`;
+    const now=new Date().toISOString();
+    const {data:inspection,error:insertError}=await sb.from('inspections').insert({
+      commerce_id:commerceId,
+      inspector_id:currentUser.id,
+      inspected_at:now,
+      latitude:gps.latitude,
+      longitude:gps.longitude,
+      gps_accuracy_m:gps.accuracy,
+      qr_scanned:false,
+      status,
+      observations:observations||null,
+      act_number:act||null,
+      target_type:'commerce'
+    }).select('id').single();
+    if(insertError)throw insertError;
+    const photoErrors=[];
+    for(let i=0;i<compressed.length;i++){
+      const blob=compressed[i];
+      const path=`${currentUser.id}/${inspection.id}/${Date.now()}-${i}.webp`;
+      const {error:uploadError}=await sb.storage.from('inspection-photos').upload(path,blob,{contentType:'image/webp',upsert:false});
+      if(uploadError){photoErrors.push(uploadError.message);continue}
+      const {error:photoRowError}=await sb.from('inspection_photos').insert({
+        inspection_id:inspection.id,
+        storage_path:path,
+        photo_type:'evidencia',
+        uploaded_by:currentUser.id,
+        description:'Evidencia fotográfica de inspección'
+      });
+      if(photoRowError)photoErrors.push(photoRowError.message);
+    }
+    const {data:pending}=await sb.from('inspection_plan_items').select('id').eq('commerce_id',commerceId).eq('status','pendiente').order('created_at').limit(1);
+    if(pending?.length){
+      await sb.from('inspection_plan_items').update({
+        status:'inspeccionado',
+        completed_inspection_id:inspection.id,
+        completed_by:currentUser.id,
+        completed_by_name:currentProfile.full_name,
+        completed_at:now
+      }).eq('id',pending[0].id);
+    }
+    close();
+    toast(photoErrors.length?'Inspección guardada. Algunas fotos no pudieron subirse.':'Inspección guardada correctamente.');
+    renderView('inspecciones');
+  }catch(err){
+    console.error(err);
+    errorBox.innerHTML=`<div class="form-error">No se pudo guardar la inspección: ${esc(err.message||'error desconocido')}</div>`;
+    saveBtn.disabled=false;saveBtn.textContent='Guardar inspección';
+  }
+}
 async function renderUsers(c){if(currentProfile.role!=='admin'){c.innerHTML='<div class="panel"><div class="form-error">Solo el administrador puede consultar usuarios.</div></div>';return}const {data,error}=await sb.from('profiles').select('full_name,email,role,active').order('full_name');if(error)throw error;c.innerHTML=`<div class="page-head"><div><h1>Usuarios</h1><p>Administradores e inspectores registrados.</p></div></div><div class="panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th></tr></thead><tbody>${(data||[]).map(u=>`<tr><td><strong>${esc(u.full_name)}</strong></td><td>${esc(u.email)}</td><td>${esc(u.role)}</td><td><span class="badge ${u.active?'success':'danger'}">${u.active?'Activo':'Inactivo'}</span></td></tr>`).join('')}</tbody></table></div></div>`}
 async function renderReports(c){const [{data:plan},{data:comms},{data:insps}]=await Promise.all([sb.from('inspection_plan_items').select('status'),sb.from('commerces').select('sector,status'),sb.from('inspections').select('status,inspected_at')]);const pc=(plan||[]).reduce((a,r)=>(a[r.status]=(a[r.status]||0)+1,a),{}),sectors={};(comms||[]).forEach(r=>{const s=r.sector||'Sin sector';sectors[s]=(sectors[s]||0)+1});const rows=Object.entries(sectors).sort((a,b)=>b[1]-a[1]).slice(0,6),max=Math.max(1,...rows.map(x=>x[1]));c.innerHTML=`<div class="page-head"><div><h1>Reportes y estadísticas</h1><p>Datos que se convierten en mejores decisiones.</p></div></div><div class="report-grid"><div class="report-card"><h3>Estado de inspecciones planificadas</h3><div class="bar-row"><span>Pendientes</span><div class="bar"><i style="width:${(pc.pendiente||0)/Math.max(1,(plan||[]).length)*100}%"></i></div><strong>${pc.pendiente||0}</strong></div><div class="bar-row"><span>Inspeccionados</span><div class="bar"><i style="width:${(pc.inspeccionado||0)/Math.max(1,(plan||[]).length)*100}%"></i></div><strong>${pc.inspeccionado||0}</strong></div></div><div class="report-card"><h3>Inspecciones registradas</h3><div class="stat-value">${(insps||[]).length}</div><div class="muted">Total histórico</div></div><div class="report-card"><h3>Comercios por sector</h3>${rows.map(([s,n])=>`<div class="bar-row"><span>${esc(s)}</span><div class="bar"><i style="width:${n/max*100}%"></i></div><strong>${n}</strong></div>`).join('')||'<div class="empty">Sin datos</div>'}</div><div class="report-card"><h3>Base de comercios</h3><div class="stat-value">${(comms||[]).length}</div><div class="muted">Registros disponibles</div></div></div>`}
 async function renderSimpleTable(c,title,table,fields){const {data,error}=await sb.from(table).select(fields).limit(500);if(error)throw error;const keys=fields.split(',');c.innerHTML=`<div class="page-head"><div><h1>${title}</h1><p>Consulta general del módulo.</p></div></div><div class="panel">${data?.length?`<div class="table-wrap"><table class="data-table"><thead><tr>${keys.map(k=>`<th>${esc(k.replaceAll('_',' '))}</th>`).join('')}</tr></thead><tbody>${data.map(r=>`<tr>${keys.map(k=>`<td>${esc(r[k]??'—')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:'<div class="empty">Todavía no hay registros.</div>'}</div>`}
