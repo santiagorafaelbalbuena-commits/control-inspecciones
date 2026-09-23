@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="n" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b2342"/>
+      <stop offset="1" stop-color="#123f73"/>
+    </linearGradient>
+    <linearGradient id="c" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1685e6"/>
+      <stop offset="1" stop-color="#0b5bb4"/>
+    </linearGradient>
+  </defs>
+  <path d="M78 71c0-29 22-51 50-51s50 22 50 51v11H78Z" fill="url(#c)"/>
+  <path d="M71 78h114" stroke="#0b2342" stroke-width="8" stroke-linecap="round"/>
+  <path d="M128 83c-27 0-45 19-45 47 0 31 20 55 45 55s45-24 45-55c0-28-18-47-45-47Z" fill="url(#n)"/>
+  <path d="M63 219c5-27 25-45 65-45s60 18 65 45Z" fill="url(#n)"/>
+  <path d="M73 166h32l23 34 23-34h32l17 53H56Z" fill="url(#c)"/>
+  <path d="M85 168v49M171 168v49M56 205h144" stroke="white" stroke-opacity=".95" stroke-width="8"/>
+  <rect x="137" y="148" width="76" height="78" rx="10" fill="url(#n)" stroke="white" stroke-width="5"/>
+  <rect x="157" y="139" width="36" height="15" rx="5" fill="url(#c)"/>
+  <path d="M154 172h42M154 189h34M154 206h28" stroke="white" stroke-width="5" stroke-linecap="round"/>
+</svg>
