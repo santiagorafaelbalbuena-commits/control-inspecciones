@@ -278,3 +278,32 @@
   object-position:center;
   flex:0 0 46px;
 }
+
+/* Ajuste de proporciones de iconos del login */
+.role-select-img{
+  display:block;
+  width:auto !important;
+  height:auto !important;
+  max-width:72px !important;
+  max-height:72px !important;
+  margin:0 auto 10px;
+  object-fit:contain !important;
+  object-position:center;
+  border-radius:0;
+  background:transparent;
+  padding:0;
+}
+.selected-role-img{
+  display:block;
+  width:auto !important;
+  height:auto !important;
+  max-width:46px !important;
+  max-height:46px !important;
+  object-fit:contain !important;
+  object-position:center;
+  flex:0 0 auto;
+  border-radius:0;
+  background:transparent;
+  padding:0;
+  border:0;
+}
