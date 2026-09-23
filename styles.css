@@ -234,3 +234,24 @@
   font-weight:700;
   letter-spacing:.015em;
 }
+
+/* Imágenes personalizadas de perfiles en el login */
+.role-select-img{
+  width:66px;
+  height:66px;
+  object-fit:contain;
+  display:block;
+  margin:0 auto 10px;
+  border-radius:12px;
+  background:#fff;
+}
+.selected-role-img{
+  width:44px;
+  height:44px;
+  object-fit:contain;
+  border-radius:10px;
+  background:#fff;
+  padding:3px;
+  border:1px solid #dfe8f1;
+}
+.selected-role-banner{align-items:center}
